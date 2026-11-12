@@ -10,7 +10,31 @@ Built with **PlatformIO + ESP-IDF** (not Arduino: lwIP NAPT is reliable on IDF a
 
 ---
 
-## 1. Configure
+## Get started
+
+You need the board (SIM card and LTE antenna fitted), a USB cable, and a computer with **Chrome or Edge**.
+
+1. Open the **[setup page](https://jan-ingenhousz-institute.github.io/solar-cellular-modem-lilygo/)** and plug the board into the computer.
+2. Click **Install**, pick the board's port, and wait for "Installation complete" (about 1 min).
+3. Under **Set up hotspot**, enter:
+   - the **WiFi name** your devices will join,
+   - a **password** (at least 8 characters),
+   - your SIM provider's **APN** (e.g. `internet.mobiel`).
+
+   Click **Save**. The board restarts.
+4. Wait for the LED to stay **solid on** (connected to the internet), then check that a phone can see and join your WiFi name.
+
+To change the name, password or APN later, plug the board in again, open the same page and repeat step 3.
+
+**Advanced:** in any serial terminal at 115200 baud, type `help`. Main commands: `status`, `wifi set "<name>" "<password>"`, `apn set <apn>`.
+
+To change the firmware itself, see [Build from source](#build-from-source).
+
+---
+
+## Build from source
+
+### 1. Configure
 
 **Credentials** stay out of git. Copy [`src/app_secrets.example.h`](src/app_secrets.example.h) to `src/app_secrets.h` (gitignored) and set:
 
@@ -28,7 +52,7 @@ Built with **PlatformIO + ESP-IDF** (not Arduino: lwIP NAPT is reliable on IDF a
 
 Board pins are pre-filled and verified — don't change the `PIN_*` section for this board.
 
-## 2. Build & flash
+### 2. Build & flash
 
 ```bash
 pio run                      # first build downloads the IDF toolchain + esp_modem (large/slow)
@@ -48,7 +72,7 @@ wifiap: NAPT enabled on SoftAP — clients now have internet
 modem:  UPLINK UP — routing clients over cellular
 ```
 
-## 3. Status LED (GPIO12)
+## Status LED (GPIO12)
 
 | Pattern | Meaning |
 |---|---|
@@ -57,7 +81,7 @@ modem:  UPLINK UP — routing clients over cellular
 | **Solid on** | **online — routing clients** |
 | Double-blink | low battery (about to deep-sleep) |
 
-## 4. Verify end-to-end
+## Verify end-to-end
 
 1. Join SSID `AmbitGateway` from a phone/laptop → you should get a `192.168.4.x` lease.
 2. Once the LED is solid, browse the web / `ping 8.8.8.8` → traffic is NAT-routed over cellular.
