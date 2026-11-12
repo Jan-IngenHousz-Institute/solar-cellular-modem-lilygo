@@ -1,5 +1,6 @@
 // Cellular modem (SIM7000G) PPP uplink + self-healing reconnect supervisor.
 #pragma once
+#include <stddef.h>
 #include "esp_err.h"
 
 typedef enum {
@@ -14,3 +15,10 @@ esp_err_t modem_ppp_start(void);
 
 // Current uplink state (for the status LED / logs).
 uplink_state_t modem_ppp_state(void);
+
+// Last signal quality read before dialing (CSQ 0-31; 99 = unknown). The modem
+// can't be queried while it carries PPP data, so this is the value at connect.
+int modem_ppp_signal_csq(void);
+
+// Writes the cellular IP into buf ("" when offline). 16 bytes is enough.
+void modem_ppp_ip_str(char *buf, size_t len);

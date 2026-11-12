@@ -1,6 +1,10 @@
 // ============================================================================
-//  app_secrets.example.h  —  TEMPLATE. Copy to app_secrets.h and fill in.
-//  app_secrets.h is gitignored; this template is the only copy committed.
+//  app_secrets.example.h  —  TEMPLATE for optional factory defaults.
+//
+//  Copy to app_secrets.h (gitignored) to bake a default hotspot into YOUR build,
+//  e.g. for bench testing. Not needed otherwise: the hotspot is normally set on
+//  the board (setup page or serial 'wifi set'), and settings saved there win.
+//  Without app_secrets.h the board boots unconfigured (hotspot and modem off).
 // ============================================================================
 #pragma once
 

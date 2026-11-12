@@ -1,0 +1,71 @@
+# Builds the firmware and publishes the setup page (web/) with it to GitHub Pages:
+# https://jan-ingenhousz-institute.github.io/solar-cellular-modem-lilygo/
+#
+# One-time setup: repo Settings -> Pages -> Source: "GitHub Actions".
+# The firmware files must be served by Pages itself: the browser flasher can't
+# fetch GitHub Release downloads (no CORS).
+name: Build firmware and publish setup page
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # full history so the firmware version (git describe) is meaningful
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini', 'src/idf_component.yml') }}
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      # platformio.ini puts build_dir under %LOCALAPPDATA% (a Windows path); point it somewhere writable.
+      # No src/app_secrets.h in CI, so this public build has no credentials: boards start unconfigured.
+      - name: Build firmware
+        run: LOCALAPPDATA="$RUNNER_TEMP" pio run -e gateway
+
+      - name: Assemble site
+        run: |
+          OUT="$RUNNER_TEMP/pio_build/tsim7000g_router/gateway"
+          mkdir -p web/firmware
+          cp "$OUT/bootloader.bin" "$OUT/partitions.bin" "$OUT/firmware.bin" web/firmware/
+          jq --arg v "$(git describe --always --tags --dirty)" '.version = $v' web/manifest.json > manifest.tmp
+          mv manifest.tmp web/manifest.json
+          ls -l web web/firmware
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

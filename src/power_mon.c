@@ -5,6 +5,7 @@
 //   slow blink   -> registered or dialing, no IP yet     (UPLINK_CONNECTING)
 //   solid on     -> online, routing clients              (UPLINK_UP)
 //   double-blink -> low battery (about to deep-sleep)
+//   triple-blink -> needs setup (no hotspot name / APN saved yet)
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -17,6 +18,7 @@
 #include "esp_adc/adc_cali_scheme.h"
 
 #include "app_config.h"
+#include "settings.h"
 #include "modem_ppp.h"
 #include "wifi_napt.h"
 #include "power_mon.h"
@@ -78,6 +80,14 @@ static void led_task(void *arg)
             led(false); vTaskDelay(pdMS_TO_TICKS(80));
             led(true);  vTaskDelay(pdMS_TO_TICKS(80));
             led(false); vTaskDelay(pdMS_TO_TICKS(760));
+            continue;
+        }
+        if (!settings_is_configured()) {                    // triple-blink
+            for (int i = 0; i < 3; i++) {
+                led(true);  vTaskDelay(pdMS_TO_TICKS(80));
+                led(false); vTaskDelay(pdMS_TO_TICKS(160));
+            }
+            vTaskDelay(pdMS_TO_TICKS(1200));
             continue;
         }
         switch (modem_ppp_state()) {

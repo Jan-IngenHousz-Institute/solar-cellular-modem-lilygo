@@ -2,20 +2,33 @@
 //  app_config.h  —  device settings (non-secret).
 //
 //  T-SIM7000G transparent cellular -> WiFi NAT router.
-//  Credentials (WiFi SSID/password, APN login) live in app_secrets.h, which is
-//  gitignored. For a MULTI-GATEWAY deployment, give each board its own
-//  WIFI_AP_SSID there.
+//
+//  Hotspot name/password and APN are normally set on the board itself (setup
+//  page or serial 'wifi set' / 'apn set') and saved in flash; those saved values
+//  win. The values below are only FACTORY DEFAULTS for a freshly erased board.
+//  Credential defaults come from the optional, gitignored app_secrets.h; without
+//  it (e.g. the public release build) the board boots unconfigured.
 // ============================================================================
 #pragma once
 
 #if __has_include("app_secrets.h")
 #include "app_secrets.h"
-#else
-#error "Missing src/app_secrets.h - copy src/app_secrets.example.h to src/app_secrets.h and fill it in."
+#endif
+#ifndef WIFI_AP_SSID
+#define WIFI_AP_SSID        ""                    // "" = needs setup
+#endif
+#ifndef WIFI_AP_PASSWORD
+#define WIFI_AP_PASSWORD    ""
+#endif
+#ifndef CELL_APN_USER
+#define CELL_APN_USER       ""
+#endif
+#ifndef CELL_APN_PASS
+#define CELL_APN_PASS       ""
 #endif
 
 // ---------------------------------------------------------------------------
-//  WiFi hotspot (SSID + password come from app_secrets.h)
+//  WiFi hotspot
 // ---------------------------------------------------------------------------
 #define WIFI_AP_CHANNEL     6                     // 1..13
 #define WIFI_AP_MAX_CONN    10                    // ESP32 SoftAP hard ceiling = 10 clients
@@ -24,8 +37,7 @@
 //  Cellular (SIM7000G). APN is REQUIRED and carrier-specific — wrong APN = no data.
 //  "internet" is a common default; confirm with your SIM provider.
 // ---------------------------------------------------------------------------
-#define CELL_APN            "internet.mobiel"            // <-- carrier APN
-// CELL_APN_USER / CELL_APN_PASS come from app_secrets.h (usually empty)
+#define CELL_APN            "internet.mobiel"     // default carrier APN (overridden by 'apn set')
 
 #define FALLBACK_DNS        "8.8.8.8"             // handed to clients if the carrier supplies none
 
@@ -54,7 +66,7 @@
 // ============================================================================
 #define PIN_MODEM_TX        27    // ESP32 TX -> modem RX
 #define PIN_MODEM_RX        26    // ESP32 RX <- modem TX
-#define PIN_MODEM_DTR       25
+#define PIN_MODEM_DTR       25    // held LOW by modem_ppp.c; floating breaks PPP after a modem power-on
 #define PIN_MODEM_PWRKEY    4     // power-on pulse (via inverting driver)
 #define PIN_LED             12    // status LED, ACTIVE-LOW. NB: GPIO12 is a boot strapping pin.
 #define LED_ON_LEVEL        0     // level that turns the LED on

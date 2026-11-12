@@ -12,6 +12,16 @@ CONFIG_LWIP_L2_TO_L3_COPY=y
 CONFIG_LWIP_PPP_SUPPORT=y
 CONFIG_LWIP_PPP_PAP_SUPPORT=y
 CONFIG_LWIP_PPP_CHAP_SUPPORT=y
+# The SIM7000 ignores PPP IPv6 negotiation; lwIP would only keep retrying it.
+CONFIG_LWIP_PPP_ENABLE_IPV6=n
+# Keepalive: 4 unanswered echoes 5 s apart = link declared dead after ~20 s,
+# so a silent modem is redialed instead of being reported as online.
+CONFIG_LWIP_ENABLE_LCP_ECHO=y
+CONFIG_LWIP_LCP_ECHOINTERVAL=5
+CONFIG_LWIP_LCP_MAXECHOFAILS=4
+# PPP + NAT run in the TCP/IP task; 3072 left too little headroom (as in
+# Espressif's ap_to_pppos example).
+CONFIG_LWIP_TCPIP_TASK_STACK_SIZE=4096
 # Uncomment to debug PPP negotiation during bring-up:
 # CONFIG_LWIP_PPP_DEBUG_ON=y
 
@@ -23,6 +33,10 @@ CONFIG_ESP_BROWNOUT_DET_LVL_SEL_7=y
 # --- Task watchdog (unattended field device) --------------------------------
 CONFIG_ESP_TASK_WDT_INIT=y
 CONFIG_ESP_TASK_WDT_TIMEOUT_S=60
+
+# --- Flash: ESP32-WROVER-B has 4 MB, and partitions.csv needs more than 2 MB.
+#     Matters for the web flasher, which writes the bootloader header as built. -
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 
 # --- Misc -------------------------------------------------------------------
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=6144

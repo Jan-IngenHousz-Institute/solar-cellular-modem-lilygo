@@ -12,6 +12,8 @@ Built with **PlatformIO + ESP-IDF** (not Arduino: lwIP NAPT is reliable on IDF a
 
 ## Get started
 
+> **Status:** the setup page is in development. Until it's live, use [Build from source](#build-from-source).
+
 You need the board (SIM card and LTE antenna fitted), a USB cable, and a computer with **Chrome or Edge**.
 
 1. Open the **[setup page](https://jan-ingenhousz-institute.github.io/solar-cellular-modem-lilygo/)** and plug the board into the computer.
@@ -26,7 +28,7 @@ You need the board (SIM card and LTE antenna fitted), a USB cable, and a compute
 
 To change the name, password or APN later, plug the board in again, open the same page and repeat step 3.
 
-**Advanced:** in any serial terminal at 115200 baud, type `help`. Main commands: `status`, `wifi set "<name>" "<password>"`, `apn set <apn>`.
+**Advanced:** in any serial terminal at 115200 baud, type `help`. Main commands: `status`, `wifi set "<name>" "<password>"`, `apn set <apn>`, then `reboot` to apply.
 
 To change the firmware itself, see [Build from source](#build-from-source).
 
@@ -36,19 +38,14 @@ To change the firmware itself, see [Build from source](#build-from-source).
 
 ### 1. Configure
 
-**Credentials** stay out of git. Copy [`src/app_secrets.example.h`](src/app_secrets.example.h) to `src/app_secrets.h` (gitignored) and set:
+The hotspot name, password and APN are normally set on the board (setup page or serial commands) and saved in its flash; saved values always win. Build-time values are only **factory defaults** for an erased board:
 
-| Setting | What |
-|---|---|
-| `WIFI_AP_SSID` / `WIFI_AP_PASSWORD` | the hotspot name + password (≥8 chars for WPA2, or `""` for an open AP) |
-| `CELL_APN_USER` / `CELL_APN_PASS` | only if your SIM needs them (usually empty) |
-
-**Device settings** are in [`src/app_config.h`](src/app_config.h):
-
-| Setting | What |
-|---|---|
-| `CELL_APN` | **REQUIRED** — your SIM carrier's APN. Wrong APN = no data. |
-| `BATT_LOW_MV` | low-battery deep-sleep cutoff in mV; set **`0` to disable** (always run while powered) |
+| Setting | Where | What |
+|---|---|---|
+| `WIFI_AP_SSID` / `WIFI_AP_PASSWORD` | optional `src/app_secrets.h` (copy [`app_secrets.example.h`](src/app_secrets.example.h); gitignored) | default hotspot. **Without this file the board starts unconfigured** (hotspot and modem off) — this is how the public build ships |
+| `CELL_APN_USER` / `CELL_APN_PASS` | same file | default APN login (usually empty) |
+| `CELL_APN` | [`src/app_config.h`](src/app_config.h) | default APN |
+| `BATT_LOW_MV` | [`src/app_config.h`](src/app_config.h) | low-battery deep-sleep cutoff in mV; set **`0` to disable** (always run while powered) |
 
 Board pins are pre-filled and verified — don't change the `PIN_*` section for this board.
 
@@ -76,6 +73,7 @@ modem:  UPLINK UP — routing clients over cellular
 
 | Pattern | Meaning |
 |---|---|
+| 3 quick flashes, pause | needs setup — hotspot and modem are off |
 | Fast blink | modem down / booting / unresponsive |
 | Slow blink | registered or dialing, no IP yet |
 | **Solid on** | **online — routing clients** |
@@ -93,7 +91,7 @@ modem:  UPLINK UP — routing clients over cellular
 ## Deployment notes
 
 - **Capacity:** the ESP32 SoftAP caps at **10 simultaneously-associated** clients (hard chip limit). For **~10–25 sleepy nodes** (wake → publish → sleep), one gateway is plenty — only ~1–2 are ever joined at once.
-- **Multiple gateways:** flash this **same binary** onto several boards, each with its **own `WIFI_AP_SSID`**. Do this for WiFi **coverage** (nodes spread out) or **redundancy** — not for capacity.
+- **Multiple gateways:** flash this **same binary** onto several boards, each with its **own hotspot name**. Do this for WiFi **coverage** (nodes spread out) or **redundancy** — not for capacity.
 - **The real shared limit is the cellular uplink** (LTE-M ≤ ~300 kbps, high-latency), not client count. Site placement / signal matters most.
 
 
@@ -101,12 +99,16 @@ modem:  UPLINK UP — routing clients over cellular
 
 ## Troubleshooting
 
-- **Modem never registers / no `PPP GOT IP`:** wrong `CELL_APN` (most common); weak signal (check the LTE antenna + SIM seating); SIM not data-enabled or PIN-locked.
+- **Modem never registers / no `PPP GOT IP`:** wrong APN (most common — check it with `status`, change it on the setup page or with `apn set`); weak signal (check the LTE antenna + SIM seating); SIM not data-enabled or PIN-locked.
 - **Modem never responds to AT (stays "fast blink"):** PWRKEY polarity — flip `PWRKEY_ASSERT` in [`src/modem_ppp.c`](src/modem_ppp.c).
 - **`esp_netif_napt_enable failed`:** `CONFIG_LWIP_IPV4_NAPT` not set — confirm `sdkconfig.defaults` was applied (delete the generated `sdkconfig` and rebuild).
 - **Random resets when the modem transmits:** weak power/battery sag. Brownout is already set to the most tolerant level; use a healthy battery and good USB/solar supply.
 - **PlatformIO pulls an old ESP-IDF (no `esp_netif_napt_enable`):** ensure `platform = espressif32 @ ^6.9.0` (ESP-IDF 5.1+). If still stuck, switch to the `pioarduino` platform fork in `platformio.ini`.
 - **`esp_modem` won't resolve:** bump `espressif/esp_modem` in [`src/idf_component.yml`](src/idf_component.yml) (try `"^2"` or `"*"`).
+
+## Setup page (maintainers)
+
+[`web/`](web/) is the setup page: [ESP Web Tools](https://esphome.github.io/esp-web-tools/) for installing, plus a form that sends the serial commands over Web Serial. On every push to `main`, [`.github/workflows/pages.yml`](.github/workflows/pages.yml) builds the firmware (without `app_secrets.h`, so it carries no credentials), copies it into the page and publishes it to GitHub Pages. One-time setup: repo **Settings → Pages → Source: GitHub Actions**.
 
 ## What this firmware does NOT do (v1)
 No MQTT/TLS on the gateway (end-to-end on the ambytes by design), no GPS, no SD logging, no OTA, no web UI. All are clean follow-ups.

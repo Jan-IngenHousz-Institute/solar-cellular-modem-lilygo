@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gateway Setup</title>
+<meta name="description" content="Install the firmware on a LilyGo T-SIM7000G solar cellular gateway and set its WiFi name, password and APN from the browser.">
+<script type="module" src="https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js?module"></script>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --text: #1b1f24; --muted: #5b6470; --line: #d9dee5;
+    --accent: #1f6f4a; --accent-text: #ffffff; --ok: #1f7a3f; --warn: #9a6200; --err: #b3261e;
+    --field: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12151a; --card: #1b2027; --text: #e7eaee; --muted: #9aa4b1; --line: #2e3540;
+      --accent: #4fbf87; --accent-text: #0d1a13; --ok: #5fd08f; --warn: #e2b04a; --err: #f08a80;
+      --field: #12151a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12151a; --card: #1b2027; --text: #e7eaee; --muted: #9aa4b1; --line: #2e3540;
+    --accent: #4fbf87; --accent-text: #0d1a13; --ok: #5fd08f; --warn: #e2b04a; --err: #f08a80;
+    --field: #12151a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 680px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  .lead { color: var(--muted); margin: 0 0 24px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+          padding: 20px; margin: 0 0 16px; }
+  .card h2 { display: flex; align-items: center; gap: 10px; font-size: 1.15rem; margin: 0 0 8px; }
+  .num { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+         background: var(--accent); color: var(--accent-text); font-size: .95rem; flex: none; }
+  p { margin: 0 0 12px; }
+  .hint { color: var(--muted); font-size: .92rem; }
+  .btn { font: inherit; font-weight: 600; padding: 10px 18px; border-radius: 8px; cursor: pointer;
+         border: 1px solid var(--line); background: var(--card); color: var(--text); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  label { display: block; font-weight: 600; margin: 14px 0 4px; }
+  label .sub { font-weight: 400; color: var(--muted); }
+  input[type=text], input[type=password] {
+    width: 100%; font: inherit; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--field); color: var(--text); }
+  input:disabled { opacity: .6; }
+  .check { display: flex; align-items: center; gap: 8px; font-weight: 400; margin-top: 8px; }
+  details { margin-top: 14px; }
+  summary { cursor: pointer; color: var(--muted); }
+  .actions { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .msg { margin: 12px 0 0; min-height: 1.5em; }
+  .msg.ok { color: var(--ok); } .msg.warn { color: var(--warn); } .msg.error { color: var(--err); }
+  .notice { border: 1px solid var(--err); color: var(--err); border-radius: 8px; padding: 12px 14px; margin: 0 0 16px; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0 0 12px; }
+  dt { color: var(--muted); }
+  dd { margin: 0; overflow-wrap: anywhere; }
+  .good { color: var(--ok); font-weight: 600; } .pending { color: var(--warn); font-weight: 600; }
+  .bad { color: var(--err); font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+  td { border-top: 1px solid var(--line); padding: 6px 8px 6px 0; vertical-align: top; }
+  ul { padding-left: 20px; margin: 0; } li { margin-bottom: 8px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Gateway setup</h1>
+  <p class="lead">Install the firmware on a LilyGo T-SIM7000G board and choose the WiFi name and password your devices will join. No software to install.</p>
+
+  <div id="unsupported" class="notice" hidden>
+    This page needs <b>Chrome or Edge on a computer</b> (Windows, Mac or Linux). It does not work in Firefox, Safari or on phones.
+  </div>
+
+  <section class="card">
+    <h2><span class="num">1</span> Install the firmware</h2>
+    <p>Fit the SIM card and antenna, plug the board into this computer with a USB cable, then click <b>Install</b> and pick the board in the list. This erases the board and takes about a minute.</p>
+    <esp-web-install-button manifest="manifest.json">
+      <button slot="activate" class="btn primary">Install</button>
+      <span slot="unsupported"></span>
+      <span slot="not-allowed">This page must be opened over https.</span>
+    </esp-web-install-button>
+    <p class="hint" style="margin-top:12px">When it says the installation is complete, close that window and go to step 2. Skip this step if the board already has the firmware.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">2</span> Set up the hotspot</h2>
+    <p>Click <b>Connect</b> and pick the board in the list again.</p>
+    <div class="actions" style="margin-top:0">
+      <button id="connect" class="btn primary" type="button">Connect</button>
+      <button id="disconnect" class="btn" type="button" hidden>Disconnect</button>
+    </div>
+    <p id="conn-msg" class="msg" role="status"></p>
+
+    <form id="setup" autocomplete="off" novalidate>
+      <fieldset id="fields" disabled style="border:0;padding:0;margin:0">
+        <label for="ssid">WiFi name <span class="sub">— the network your devices will join</span></label>
+        <input type="text" id="ssid" maxlength="32" spellcheck="false">
+
+        <label for="password">WiFi password <span class="sub">— at least 8 characters</span></label>
+        <input type="password" id="password" maxlength="63" autocomplete="new-password">
+        <label class="check"><input type="checkbox" id="showpw"> Show password</label>
+
+        <label for="apn">APN <span class="sub">— from your SIM provider</span></label>
+        <input type="text" id="apn" maxlength="63" placeholder="e.g. internet.mobiel" spellcheck="false">
+
+        <details>
+          <summary>APN username and password (most SIM cards don't need these)</summary>
+          <label for="apn_user">APN username</label>
+          <input type="text" id="apn_user" maxlength="63" spellcheck="false">
+          <label for="apn_pass">APN password</label>
+          <input type="password" id="apn_pass" maxlength="63" autocomplete="new-password">
+        </details>
+
+        <div class="actions">
+          <button id="save" class="btn primary" type="submit">Save</button>
+        </div>
+      </fieldset>
+      <p id="save-msg" class="msg" role="status"></p>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">3</span> Check it works</h2>
+    <p class="hint" id="status-hint">Connect to the board in step 2 to see its status here.</p>
+    <dl id="status" hidden>
+      <dt>Setup</dt><dd id="st-setup"></dd>
+      <dt>Hotspot</dt><dd id="st-hotspot"></dd>
+      <dt>Mobile data</dt><dd id="st-uplink"></dd>
+      <dt>Signal</dt><dd id="st-signal"></dd>
+      <dt>Battery</dt><dd id="st-batt"></dd>
+      <dt>Firmware</dt><dd id="st-version"></dd>
+    </dl>
+    <p class="hint">When the board is online, its LED stays on. Then check that a phone can see and join your WiFi name. Connecting to the mobile network can take a few minutes.</p>
+  </section>
+
+  <section class="card">
+    <h2>Problems?</h2>
+    <ul>
+      <li><b>The board isn't in the list:</b> try another USB cable (some only charge). On Windows the board may need a USB driver: install the <a href="https://www.wch-ic.com/downloads/CH343SER_EXE.html" rel="noopener">CH343 driver</a> (newer boards) or the <a href="https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers" rel="noopener">CP210x driver</a> (older boards), then unplug and replug the board.</li>
+      <li><b>"Can't open the board":</b> close the install window, other browser tabs using the board, and any serial monitor, then try again.</li>
+      <li><b>The board doesn't answer:</b> press the RST button on the board and click <b>Connect</b> again.</li>
+      <li><b>Mobile data stays "connecting":</b> check the APN with your SIM provider, that the antenna is attached, and that the SIM has mobile data enabled and no PIN.</li>
+    </ul>
+    <p style="margin-top:12px"><b>LED on the board</b></p>
+    <table>
+      <tr><td>3 quick flashes, pause</td><td>Needs setup (step 2)</td></tr>
+      <tr><td>Fast blinking</td><td>Starting the modem</td></tr>
+      <tr><td>Slow blinking</td><td>Connecting to the mobile network</td></tr>
+      <tr><td>Steady on</td><td>Online: devices on the hotspot have internet</td></tr>
+      <tr><td>2 quick flashes, pause</td><td>Battery low, about to sleep</td></tr>
+    </table>
+  </section>
+</main>
+
+<script type="module">
+// Talks to the gateway's serial command line (see src/cli.c) over Web Serial.
+// Replies we parse are single lines starting with "OK ", "ERROR " or "STATUS ".
+const $ = (id) => document.getElementById(id);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const supported = 'serial' in navigator;
+if (!supported) { $('unsupported').hidden = false; $('connect').disabled = true; }
+
+let port = null, reader = null, writer = null;
+let lineBuf = '';
+let waiters = [];
+let busy = Promise.resolve();      // serialises commands
+let statusTimer = null;
+
+function setMsg(id, text, kind = '') { const el = $(id); el.textContent = text; el.className = 'msg ' + kind; }
+
+// ---------------------------------------------------------------- serial I/O
+function onLine(raw) {
+  const line = raw.replace(/\x1b\[[0-9;]*[A-Za-z]/g, '').replace(/^(gateway>\s*)+/, '').trim();
+  for (const w of [...waiters]) {
+    const r = w.match(line);
+    if (r !== undefined) { waiters = waiters.filter((x) => x !== w); w.resolve(r); }
+  }
+}
+
+async function readLoop() {
+  const decoder = new TextDecoder();
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      lineBuf += decoder.decode(value, { stream: true });
+      let i;
+      while ((i = lineBuf.indexOf('\n')) >= 0) { onLine(lineBuf.slice(0, i)); lineBuf = lineBuf.slice(i + 1); }
+      if (lineBuf.length > 8192) lineBuf = lineBuf.slice(-1024);
+    }
+  } catch (e) { /* port closed or unplugged */ }
+}
+
+function waitFor(match, ms) {
+  return new Promise((resolve) => {
+    const w = { match, resolve };
+    waiters.push(w);
+    setTimeout(() => { if (waiters.includes(w)) { waiters = waiters.filter((x) => x !== w); resolve(null); } }, ms);
+  });
+}
+
+async function send(cmd) { await writer.write(new TextEncoder().encode(cmd + '\n')); }
+
+function locked(fn) { const run = busy.then(fn, fn); busy = run.catch(() => {}); return run; }
+
+// "OK ..." / "ERROR ..." reply to one command; null on timeout.
+function command(cmd, ms = 4000) {
+  return locked(async () => {
+    const p = waitFor((l) => { const m = l.match(/^(OK|ERROR) (.*)$/); return m ? { ok: m[1] === 'OK', msg: m[2] } : undefined; }, ms);
+    await send(cmd);
+    return p;
+  });
+}
+
+function getStatus(ms = 1500) {
+  return locked(async () => {
+    const p = waitFor((l) => {
+      const i = l.indexOf('STATUS {');
+      if (i < 0) return undefined;
+      try { return JSON.parse(l.slice(i + 7)); } catch { return undefined; }
+    }, ms);
+    await send('status --json');
+    return p;
+  });
+}
+
+async function pollStatus(seconds) {
+  const end = Date.now() + seconds * 1000;
+  while (port && Date.now() < end) {
+    const st = await getStatus(1500);
+    if (st) return st;
+  }
+  return null;
+}
+
+async function resetBoard() {
+  // Same as esptool's hard reset: RTS pulls EN low; DTR stays off so the
+  // board boots normally (not into download mode).
+  try {
+    await port.setSignals({ dataTerminalReady: false, requestToSend: true });
+    await sleep(120);
+    await port.setSignals({ dataTerminalReady: false, requestToSend: false });
+  } catch (e) { /* not all adapters support it */ }
+}
+
+// -------------------------------------------------------------------- connect
+async function connect() {
+  setMsg('conn-msg', '');
+  try {
+    port = await navigator.serial.requestPort();
+  } catch (e) { port = null; return; }          // picker cancelled
+  try {
+    await port.open({ baudRate: 115200 });
+  } catch (e) {
+    port = null;
+    setMsg('conn-msg', "Can't open the board. Close the install window, other tabs and any serial monitor, then try again.", 'error');
+    return;
+  }
+  writer = port.writable.getWriter();
+  reader = port.readable.getReader();
+  readLoop();
+  $('connect').hidden = true; $('disconnect').hidden = false;
+  setMsg('conn-msg', 'Talking to the board…');
+
+  let st = await pollStatus(6);
+  if (!st && port) { await resetBoard(); st = await pollStatus(15); }
+  if (!st) {
+    setMsg('conn-msg', "The board doesn't answer. Press the RST button on the board, then click Connect again. If you just installed, make sure the installation finished.", 'error');
+    await disconnect(false);
+    return;
+  }
+  await command('log off', 2000);              // fewer log lines while we talk
+  setMsg('conn-msg', 'Connected to the board.', 'ok');
+  fillForm(st);
+  showStatus(st);
+  $('fields').disabled = false;
+  startStatusLoop();
+}
+
+async function disconnect(clearMsg = true) {
+  stopStatusLoop();
+  $('fields').disabled = true;
+  waiters.forEach((w) => w.resolve(null)); waiters = [];
+  const p = port; port = null;
+  try { if (reader) { await reader.cancel(); reader.releaseLock(); } } catch (e) {}
+  try { if (writer) { writer.releaseLock(); } } catch (e) {}
+  try { if (p) await p.close(); } catch (e) {}
+  reader = writer = null;
+  $('connect').hidden = false; $('disconnect').hidden = true;
+  if (clearMsg) setMsg('conn-msg', '');
+}
+
+if (supported) {
+  navigator.serial.addEventListener('disconnect', (e) => {
+    if (port && e.target === port) { disconnect(false); setMsg('conn-msg', 'The board was unplugged.', 'warn'); }
+  });
+}
+
+// --------------------------------------------------------------------- status
+function signalText(csq) {
+  if (!csq || csq === 99) return 'unknown';
+  const word = csq >= 20 ? 'excellent' : csq >= 15 ? 'good' : csq >= 10 ? 'fair' : 'weak';
+  return `${word} (CSQ ${csq})`;
+}
+
+function showStatus(st) {
+  $('status-hint').hidden = true; $('status').hidden = false;
+  const set = (id, html) => { $(id).innerHTML = html; };
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  if (st.reboot_pending)      set('st-setup', '<span class="pending">Saved, restart pending</span>');
+  else if (st.configured)     set('st-setup', '<span class="good">Done</span>');
+  else                        set('st-setup', '<span class="bad">Needed</span> — fill in step 2');
+
+  set('st-hotspot', st.configured
+    ? `“${esc(st.ssid)}” (${st.open ? 'no password' : 'password protected'}), ${st.clients} device${st.clients === 1 ? '' : 's'} connected`
+    : 'Off until set up');
+
+  const up = { up: '<span class="good">Connected ✓</span>',
+               connecting: '<span class="pending">Connecting…</span> (can take a few minutes)',
+               down: '<span class="pending">Starting the modem…</span>',
+               off: 'Off until set up' }[st.uplink] || esc(st.uplink);
+  set('st-uplink', st.configured ? `${up}, APN “${esc(st.apn)}”` : up);
+  set('st-signal', signalText(st.signal_csq));
+  set('st-batt', st.batt_mv >= 2500 ? `${(st.batt_mv / 1000).toFixed(2)} V` : 'no battery (USB power)');
+  set('st-version', esc(st.version));
+}
+
+function startStatusLoop() {
+  stopStatusLoop();
+  statusTimer = setInterval(async () => {
+    if (!port) return;
+    const st = await getStatus(1500);
+    if (st) showStatus(st);
+  }, 5000);
+}
+function stopStatusLoop() { if (statusTimer) clearInterval(statusTimer); statusTimer = null; }
+
+function fillForm(st) {
+  // Only prefill what the board already uses; a new board shows the APN example instead.
+  if (st.configured) {
+    $('ssid').value = st.ssid || '';
+    $('apn').value = st.apn || '';
+    $('apn_user').value = st.apn_user || '';
+  }
+}
+
+// ----------------------------------------------------------------------- save
+const PRINTABLE = /^[\x20-\x7e]*$/;
+function validate(v) {
+  if (v.ssid.length < 1 || v.ssid.length > 32) return 'The WiFi name must be 1–32 characters.';
+  if (!PRINTABLE.test(v.ssid)) return 'The WiFi name can only use plain letters, digits, spaces and symbols (no accents or emoji).';
+  if (v.password.length < 8 || v.password.length > 63) return 'The WiFi password must be 8–63 characters.';
+  if (!PRINTABLE.test(v.password)) return 'The WiFi password can only use plain letters, digits, spaces and symbols (no accents or emoji).';
+  if (v.apn.length < 1) return 'Enter the APN from your SIM provider (e.g. internet.mobiel).';
+  if (!/^[\x21-\x7e]{1,63}$/.test(v.apn)) return 'The APN can only use plain letters, digits and symbols, without spaces.';
+  if (!PRINTABLE.test(v.apn_user) || !PRINTABLE.test(v.apn_pass)) return 'The APN username and password can only use plain letters, digits, spaces and symbols.';
+  return null;
+}
+
+const quote = (s) => '"' + s.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+
+$('setup').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!port) return;
+  const v = {
+    ssid: $('ssid').value, password: $('password').value, apn: $('apn').value.trim(),
+    apn_user: $('apn_user').value, apn_pass: $('apn_pass').value,
+  };
+  const why = validate(v);
+  if (why) { setMsg('save-msg', why, 'error'); return; }
+
+  $('fields').disabled = true;
+  stopStatusLoop();
+  setMsg('save-msg', 'Saving…');
+  try {
+    let r = await command(`wifi set ${quote(v.ssid)} ${quote(v.password)}`);
+    if (!r || !r.ok) throw new Error(r ? r.msg : 'No answer from the board.');
+    let apnCmd = `apn set ${quote(v.apn)}`;
+    if (v.apn_user || v.apn_pass) apnCmd += ` ${quote(v.apn_user)} ${quote(v.apn_pass)}`;
+    r = await command(apnCmd);
+    if (!r || !r.ok) throw new Error(r ? r.msg : 'No answer from the board.');
+
+    setMsg('save-msg', 'Saved. The board is restarting…');
+    await command('reboot', 3000);
+    await sleep(2500);
+    const st = await pollStatus(20);
+    if (!st) throw new Error("Saved, but the board didn't come back. Press RST on the board and click Connect again.");
+    await command('log off', 2000);
+    showStatus(st);
+    $('password').value = '';
+    setMsg('save-msg', st.configured
+      ? `Done. The hotspot “${st.ssid}” is on. Wait for the LED to stay on, then check that a phone can join it.`
+      : 'Saved, but the board still reports it needs setup. Check the values and try again.', st.configured ? 'ok' : 'warn');
+  } catch (err) {
+    setMsg('save-msg', err.message, 'error');
+  } finally {
+    if (port) { $('fields').disabled = false; startStatusLoop(); }
+  }
+});
+
+$('showpw').addEventListener('change', (e) => { $('password').type = e.target.checked ? 'text' : 'password'; });
+$('connect').addEventListener('click', connect);
+$('disconnect').addEventListener('click', () => disconnect());
+</script>
+</body>
+</html>

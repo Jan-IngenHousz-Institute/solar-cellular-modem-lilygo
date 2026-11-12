@@ -14,6 +14,8 @@
 #include "esp_log.h"
 
 #include "app_config.h"
+#include "settings.h"
+#include "cli.h"
 #include "wifi_napt.h"
 #include "modem_ppp.h"
 #include "power_mon.h"
@@ -23,15 +25,26 @@ static const char *TAG = "main";
 void app_main(void)
 {
     ESP_LOGI(TAG, "===== T-SIM7000G cellular->WiFi NAT router =====");
-    ESP_LOGI(TAG, "AP SSID '%s'  |  APN '%s'", WIFI_AP_SSID, CELL_APN);
 
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ESP_ERROR_CHECK(nvs_flash_init());
     }
+    settings_load();
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    // Serial console first, so the board can be set up even when unconfigured.
+    if (cli_start() != ESP_OK) ESP_LOGE(TAG, "serial console unavailable");
+
+    if (!settings_is_configured()) {
+        ESP_LOGW(TAG, "NOT SET UP: hotspot and modem stay off. Use the setup page, "
+                      "or type 'wifi set' and 'apn set' then 'reboot' (see 'help').");
+        ESP_ERROR_CHECK(power_mon_start());   // LED shows "needs setup"; battery protection stays on
+        return;
+    }
+    ESP_LOGI(TAG, "AP SSID '%s'  |  APN '%s'", settings_get()->ssid, settings_get()->apn);
 
     ESP_ERROR_CHECK(wifi_napt_start());   // 1) hotspot up first — clients can join immediately
     ESP_ERROR_CHECK(power_mon_start());   // 2) battery/solar telemetry + status LED

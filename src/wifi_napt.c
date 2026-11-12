@@ -18,6 +18,7 @@
 #include "dhcpserver/dhcpserver.h"
 
 #include "app_config.h"
+#include "settings.h"
 #include "wifi_napt.h"
 
 static const char *TAG = "wifiap";
@@ -95,17 +96,20 @@ esp_err_t wifi_napt_start(void)
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_PPP_GOT_IP,
                                                on_ip_event, NULL));
 
-    bool open = (strlen(WIFI_AP_PASSWORD) == 0);
+    const gateway_settings_t *st = settings_get();
+    bool open = (st->password[0] == '\0');
     wifi_config_t wc = { 0 };
-    snprintf((char *)wc.ap.ssid, sizeof(wc.ap.ssid), "%s", WIFI_AP_SSID);
-    wc.ap.ssid_len       = strlen(WIFI_AP_SSID);
+    // ssid is a 32-byte field that need not be NUL-terminated (length in ssid_len).
+    size_t ssid_len = strlen(st->ssid);
+    memcpy(wc.ap.ssid, st->ssid, ssid_len);
+    wc.ap.ssid_len       = ssid_len;
     wc.ap.channel        = WIFI_AP_CHANNEL;
     wc.ap.max_connection = WIFI_AP_MAX_CONN;
     wc.ap.beacon_interval = 100;
     if (open) {
         wc.ap.authmode = WIFI_AUTH_OPEN;
     } else {
-        snprintf((char *)wc.ap.password, sizeof(wc.ap.password), "%s", WIFI_AP_PASSWORD);
+        snprintf((char *)wc.ap.password, sizeof(wc.ap.password), "%s", st->password);
         wc.ap.authmode = WIFI_AUTH_WPA2_PSK;
     }
 
@@ -120,6 +124,6 @@ esp_err_t wifi_napt_start(void)
     set_client_dns(fb);
 
     ESP_LOGI(TAG, "SoftAP '%s' up (%s), max %d clients",
-             WIFI_AP_SSID, open ? "OPEN" : "WPA2-PSK", WIFI_AP_MAX_CONN);
+             st->ssid, open ? "OPEN" : "WPA2-PSK", WIFI_AP_MAX_CONN);
     return ESP_OK;
 }

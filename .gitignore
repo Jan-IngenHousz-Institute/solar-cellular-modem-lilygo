@@ -11,6 +11,9 @@ dependencies.lock
 # Local credentials (template: src/app_secrets.example.h)
 src/app_secrets.h
 
+# Firmware copied into the setup page by CI (.github/workflows/pages.yml)
+web/firmware/
+
 # Editor
 .vscode/
 .idea/

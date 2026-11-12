@@ -4,6 +4,8 @@ idf_component_register(
         "modem_ppp.c"
         "wifi_napt.c"
         "power_mon.c"
+        "settings.c"
+        "cli.c"
     INCLUDE_DIRS "."
     REQUIRES
         esp_wifi
@@ -17,4 +19,6 @@ idf_component_register(
         esp_timer
         esp_hw_support
         esp_system
+        console
+        esp_app_format
 )
