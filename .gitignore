@@ -1,0 +1,17 @@
+# PlatformIO
+.pio/
+# (build_dir is redirected to %LOCALAPPDATA%\pio_build, but ignore in-tree too)
+
+# ESP-IDF generated
+sdkconfig
+sdkconfig.old
+managed_components/
+dependencies.lock
+
+# Local credentials (template: src/app_secrets.example.h)
+src/app_secrets.h
+
+# Editor
+.vscode/
+.idea/
+*.swp

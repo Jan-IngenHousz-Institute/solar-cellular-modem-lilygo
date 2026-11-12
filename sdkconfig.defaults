@@ -1,0 +1,30 @@
+# ===========================================================================
+#  sdkconfig.defaults — load-bearing options for the NAT router.
+#  (PlatformIO regenerates sdkconfig from these on first build.)
+# ===========================================================================
+
+# --- NAT / IP forwarding (THE reason this is ESP-IDF, not Arduino) ----------
+CONFIG_LWIP_IP_FORWARD=y
+CONFIG_LWIP_IPV4_NAPT=y
+CONFIG_LWIP_L2_TO_L3_COPY=y
+
+# --- PPP over serial (cellular modem link) ----------------------------------
+CONFIG_LWIP_PPP_SUPPORT=y
+CONFIG_LWIP_PPP_PAP_SUPPORT=y
+CONFIG_LWIP_PPP_CHAP_SUPPORT=y
+# Uncomment to debug PPP negotiation during bring-up:
+# CONFIG_LWIP_PPP_DEBUG_ON=y
+
+# --- Brownout: SIM7000 draws ~2 A bursts; on a sagging battery that can reset
+#     the ESP32. Lowest threshold (SEL_7) = most tolerant of transient dips. ---
+CONFIG_ESP_BROWNOUT_DET=y
+CONFIG_ESP_BROWNOUT_DET_LVL_SEL_7=y
+
+# --- Task watchdog (unattended field device) --------------------------------
+CONFIG_ESP_TASK_WDT_INIT=y
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=60
+
+# --- Misc -------------------------------------------------------------------
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=6144
+CONFIG_FREERTOS_HZ=1000
+CONFIG_ESP32_WIFI_SOFTAP_BEACON_MAX_LEN=752

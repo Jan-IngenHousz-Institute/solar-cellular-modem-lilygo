@@ -1,0 +1,7 @@
+# IDF Component Manager manifest — pulls esp_modem from the registry on build.
+dependencies:
+  idf:
+    version: ">=5.0"
+  # SIM7000 PPP modem driver. ^1.1.0 picks the latest 1.x (compatible with IDF 5.1).
+  # If the resolver prefers 2.x for your IDF, change this to "^2".
+  espressif/esp_modem: "^1.1.0"

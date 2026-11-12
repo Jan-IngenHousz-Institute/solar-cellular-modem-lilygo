@@ -1,0 +1,20 @@
+idf_component_register(
+    SRCS
+        "main.c"
+        "modem_ppp.c"
+        "wifi_napt.c"
+        "power_mon.c"
+    INCLUDE_DIRS "."
+    REQUIRES
+        esp_wifi
+        esp_netif
+        esp_event
+        nvs_flash
+        esp_adc
+        driver
+        lwip
+        esp_modem
+        esp_timer
+        esp_hw_support
+        esp_system
+)
