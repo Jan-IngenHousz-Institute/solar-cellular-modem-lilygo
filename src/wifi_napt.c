@@ -1,9 +1,9 @@
 // WiFi SoftAP + NAPT.
 //
 // The AP comes up immediately at boot (so ambytes can associate even before the
-// cellular link is ready). When PPP gets an IP we (1) push the carrier's DNS to
-// the AP's DHCP server so clients resolve names, and (2) enable NAPT on the AP
-// netif so client traffic is NAT-routed out the (default) PPP interface.
+// cellular link is ready). When PPP gets an IP we (1) point the AP's DHCP server
+// at the carrier's DNS for new leases, and (2) enable NAPT on the AP netif so
+// client traffic is NAT-routed out the (default) PPP interface.
 //
 // Mirrors Espressif's esp_modem/examples/ap_to_pppos, using the current
 // esp_netif_napt_enable() wrapper instead of the raw lwIP ip_napt_enable().
@@ -29,20 +29,20 @@ static bool           s_napt_on = false;
 
 int wifi_napt_client_count(void) { return s_clients; }
 
-// Push a DNS server to the AP's DHCP clients (DHCP option 6).
+// Set the DNS server the DHCP server hands out (DHCP option 6).
+//
+// This only changes what LATER leases carry, and is safe while the server runs.
+// Never stop/start the DHCP server to do this: stopping it frees its lease
+// table, so the next device to join is offered an address that is still in use
+// (seen on hardware: a phone needed 70 s and three attempts to get an address).
 static void set_client_dns(esp_ip4_addr_t dns)
 {
     esp_netif_dns_info_t info = { 0 };
     info.ip.type = ESP_IPADDR_TYPE_V4;
     info.ip.u_addr.ip4 = dns;
-
-    dhcps_offer_t offer = OFFER_DNS;
-    esp_netif_dhcps_stop(s_ap_netif);                         // required to change options
-    esp_netif_dhcps_option(s_ap_netif, ESP_NETIF_OP_SET,
-                           ESP_NETIF_DOMAIN_NAME_SERVER, &offer, sizeof(offer));
-    esp_netif_set_dns_info(s_ap_netif, ESP_NETIF_DNS_MAIN, &info);
-    esp_netif_dhcps_start(s_ap_netif);
-    ESP_LOGI(TAG, "client DNS = " IPSTR, IP2STR(&dns));
+    esp_err_t err = esp_netif_set_dns_info(s_ap_netif, ESP_NETIF_DNS_MAIN, &info);
+    if (err != ESP_OK) ESP_LOGW(TAG, "could not set client DNS: %s", esp_err_to_name(err));
+    else               ESP_LOGI(TAG, "client DNS = " IPSTR, IP2STR(&dns));
 }
 
 static void on_wifi_event(void *arg, esp_event_base_t base, int32_t id, void *data)
@@ -113,15 +113,24 @@ esp_err_t wifi_napt_start(void)
         wc.ap.authmode = WIFI_AUTH_WPA2_PSK;
     }
 
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wc));
-    ESP_ERROR_CHECK(esp_wifi_start());
+    // DHCP: include a DNS server in every lease. Options can't be set once the
+    // DHCP server runs, so do it here, once, before the AP (and with it the DHCP
+    // server) starts. Do NOT call esp_netif_dhcps_stop() first: on a server that
+    // has not started yet it means "keep it off", and no client gets an address.
+    dhcps_offer_t offer = OFFER_DNS;
+    esp_err_t opt = esp_netif_dhcps_option(s_ap_netif, ESP_NETIF_OP_SET,
+                                           ESP_NETIF_DOMAIN_NAME_SERVER, &offer, sizeof(offer));
+    if (opt != ESP_OK) ESP_LOGE(TAG, "DHCP DNS option not set: %s", esp_err_to_name(opt));
 
-    // Give clients a resolver even before cellular is up (updated to carrier DNS
-    // on PPP GOT_IP). Reachable through NAT once the uplink is online.
+    // Give clients a resolver even before cellular is up (replaced by the carrier's
+    // DNS on PPP GOT_IP). Reachable through NAT once the uplink is online.
     esp_ip4_addr_t fb;
     esp_netif_str_to_ip4(FALLBACK_DNS, &fb);
     set_client_dns(fb);
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wc));
+    ESP_ERROR_CHECK(esp_wifi_start());
 
     ESP_LOGI(TAG, "SoftAP '%s' up (%s), max %d clients",
              st->ssid, open ? "OPEN" : "WPA2-PSK", WIFI_AP_MAX_CONN);
